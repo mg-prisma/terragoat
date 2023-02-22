@@ -1,0 +1,33 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- master
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: CopyFiles@2
+  inputs:
+    Contents: '**'
+    TargetFolder: '$(build.artifactstagingdirectory)/Terraform'
+
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.8'
+  displayName: 'Install Python 3.8'
+- script: pip install checkov
+  displayName: 'Install Checkov'
+- script: checkov -d $(build.artifactstagingdirectory)/Terraform/ --bc-api-key 58a61f68-56da-42a0-98cf-b3a28a8632df::hnsned7bb7UZ7MlqSmb+3ogQBj4= --repo-id mg-prisma/terragoat --branch master
+  displayName: 'Scan with Prisma Cloud'
+  env:
+    PRISMA_API_URL: https://api2.prismacloud.io
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(build.artifactstagingdirectory)/Terraform'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
